@@ -58,7 +58,7 @@ def get_location_dict():
                 new_loc = {'long':split_data[1], 'lat':split_data[2]}
                 location_dict[int(split_data[0])] = new_loc
     # After adding all locations, return the location dict.
-    plot_locations(location_dict)
+    # plot_locations(location_dict)
     return location_dict
 
 # Plot all the locations in our map.
@@ -167,32 +167,10 @@ def split_DNI_Dict(dict):
 
 def threeD_plotter(lat_list, long_list, z_list1, z_list2, z_list3):
 	# Create figure to add plots to
-	fig = plt.figure()
+	# Figure size is 18 x 9 inches
+	fig = plt.figure(figsize=(18,9))
+	# Add the z_list1 subplot
 	ax  = fig.add_subplot(111, projection='3d')
-	'''
-	fig = plt.figure()
-	ax = fig.gca(projection='3d')
-
-	# Make data.
-	X = np.arange(-5, 5, 0.25)
-	Y = np.arange(-5, 5, 0.25)
-	X, Y = np.meshgrid(X, Y)
-	R = np.sqrt(X**2 + Y**2)
-	Z = np.sin(R)
-
-	# Plot the surface.
-	surf = ax.plot_surface(X, Y, Z, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-
-	# Customize the z axis.
-	ax.set_zlim(-1.01, 1.01)
-	ax.zaxis.set_major_locator(LinearLocator(10))
-	ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-
-	# Add a color bar which maps values to colors.
-	fig.colorbar(surf, shrink=0.5, aspect=5)
-
-	plt.show()'''
-	# END TEST CODE
 	
 	# Numpy methods
 	# lat_list, long_List = np.meshgrid(lat_list, long_list)
@@ -202,27 +180,29 @@ def threeD_plotter(lat_list, long_list, z_list1, z_list2, z_list3):
 	# lat_list, long_list = np.meshgrid(lat_list, long_list, z_list1)
 	# np.array(lat_list)
 	# np.array(long_list)
+	# Create a numpy array of all the lists
+	lt_list = np.array(lat_list)
+	lg_list = np.array(long_list)
 	z_list = np.array(z_list1)
-	z_list = np.matrix(z_list1)
-	
-	# print(z_list)
+	# z_list = np.matrix(z_list1)
+
 	# z_list.reshape(len(lat_list), len(long_list))
 	# Contour surface
-	ax.scatter(lat_list, long_list, z_list, cmap='binary')
+	# ax.plot_wireframe(lat_list, long_list, z_list, cmap=cm.coolwarm)
 	# Create surface plot
-	# ax.plot_surface(lat_list, long_list, z_list, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+	# ax.plot_surface(lt_list, lg_list, z_list, , linewidth=1, antialiased=False)
+	ax.scatter(lt_list, lg_list, z_list, zdir='z', marker=".", c=z_list,  cmap=cm.coolwarm, s=10) # 'viridis'
 	# surface2 = ax.plot_surface(lat_list, long_list, z_list2, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 	# surface2 = ax.plot_surface(lat_list, long_list, z_list3, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 	
 	# Customize the z axis.
-	ax.set_zlim(0, 50.01)
-	ax.zaxis.set_major_locator(LinearLocator(10))
-	ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+	# ax.set_zlim(0, 50.01)
+	# ax.zaxis.set_major_locator(LinearLocator(10))
+	# ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
 	
 	# Add a color bar which maps values to colors.
-	# fig.colorbar(surf, shrink=0.5, aspect=5)
-	# ax.plot3D(lat_list, long_list, z_list1)
-
+	# fig.colorbar(s1, shrink=0.5, aspect=5)
+	# ax.plot3D(lat_list, long_list, z_list)
 	plt.show()
 	return fig
 	
@@ -233,6 +213,7 @@ def main():
     summed_dict = get_summed_DNI(get_dataframes(get_location_dict()))
     tl, pl, ll, lol, sl = split_DNI_Dict(summed_dict)
     fig = threeD_plotter(ll, lol, sl, pl, tl)
+    print("Fin")
     return None
 
 
