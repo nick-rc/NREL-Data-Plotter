@@ -14,6 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
+import json
 
 import glob # For directory and pathname processing
 
@@ -121,7 +122,7 @@ def get_dataframes(loc_dict):
 			fp.close()
 			print("*",end='', flush=True)
 	return loc_dict
-	
+
 # Function to sum the DNI values of the dict and return a dict with:
 # 	LOC ID - temp, pressure, lat, long, DNI Sum
 def get_summed_DNI(loc_dict):
@@ -133,7 +134,7 @@ def get_summed_DNI(loc_dict):
 		sum_dict[key] = {}
 		dni_sum = 0
 		# Then loop through using itervalues
-		for data_key, value in data_pts.items(): 
+		for data_key, value in data_pts.items():
 			# Check if key contains DNI, if it does, sum the value
 			if 'DNI' in data_key:
 				# Key is a DNI value - add value to DNI sum
@@ -144,12 +145,29 @@ def get_summed_DNI(loc_dict):
 		# Add DNI_sum to loc_dict
 		sum_dict[key]['DNI Sum'] = dni_sum
 	return sum_dict
-			
+
+# Create a function to cache the dictionary
+def cache_dict(dict):
+	# Create a json object from the dict
+	json_dict = json.dumps(dict)
+	# Cache the DB in a file
+	f = open("dict_cache.json","w")
+	f.write(json_dict)
+	f.close()
+	return None
+
+# Create a function to pull the cache
+def uncache_dict():
+	f = open("dict_cache.json","r")
+	json_str = f.read()
+	json_data = json.loads(json_str)
+	return json_data
+
 # Manipulate DNI to get other values.
 def split_DNI_Dict(dict):
 	# First get a list of locations that are sorted.
 	loc_list = sorted(dict.items())
-	# Get list of location Ids and 
+	# Get list of location Ids and
 	ids, loc_data = zip(*loc_list)
 	temp_list = []
 	# Create 5 Lists - Temp, Lat, Long, Precip, DNI Sum
@@ -158,20 +176,22 @@ def split_DNI_Dict(dict):
 	lat_list  = [float(eval(d["lat"])) for d in loc_data]
 	long_list = [float(eval(d["long"])) for d in loc_data]
 	sumDNI_list = [float(d["DNI Sum"]) for d in loc_data]
-	
+
 	# Return the 5 lists
 	# Type
 	return temp_list, precip_list, lat_list, long_list, sumDNI_list
-	
+
 	# Create a histogram(heatmap) plotter here
 
 def threeD_plotter(lat_list, long_list, z_list1, z_list2, z_list3):
 	# Create figure to add plots to
 	# Figure size is 18 x 9 inches
-	fig = plt.figure(figsize=(18,9))
+	fig = plt.figure(figsize=(36,9))
 	# Add the z_list1 subplot
-	ax  = fig.add_subplot(111, projection='3d')
-	
+	ax1  = fig.add_subplot(121, projection='3d')
+	ax1.set_xlabel("Latitude")
+	ax1.set_ylabel("Longitude")
+	ax1.set_zlabel("DNI Values")
 	# Numpy methods
 	# lat_list, long_List = np.meshgrid(lat_list, long_list)
 	print(len(lat_list))
@@ -184,35 +204,52 @@ def threeD_plotter(lat_list, long_list, z_list1, z_list2, z_list3):
 	lt_list = np.array(lat_list)
 	lg_list = np.array(long_list)
 	z_list = np.array(z_list1)
-	# z_list = np.matrix(z_list1)
-
-	# z_list.reshape(len(lat_list), len(long_list))
-	# Contour surface
-	# ax.plot_wireframe(lat_list, long_list, z_list, cmap=cm.coolwarm)
 	# Create surface plot
 	# ax.plot_surface(lt_list, lg_list, z_list, , linewidth=1, antialiased=False)
-	ax.scatter(lt_list, lg_list, z_list, zdir='z', marker=".", c=z_list,  cmap=cm.coolwarm, s=10) # 'viridis'
+	ax1.scatter(lt_list, lg_list, z_list, zdir='z', marker=".", c=z_list,  cmap=cm.BrBG, s=50) # 'viridis'
 	# surface2 = ax.plot_surface(lat_list, long_list, z_list2, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 	# surface2 = ax.plot_surface(lat_list, long_list, z_list3, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-	
+
 	# Customize the z axis.
 	# ax.set_zlim(0, 50.01)
 	# ax.zaxis.set_major_locator(LinearLocator(10))
 	# ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-	
+	# Second test subplot
+	ax2 = fig.add_subplot(122, projection='3d')
+	dx = np.ones(len(lat_list))/2
+	dy = np.ones(len(long_list))/2
+	z_pos = np.zeros(len(z_list))
+	norm = plt.Normalize(z_list.min(), z_list.max())
+	colors = cm.BrBG(norm(z_list))
+
+	ax2.bar3d(lt_list, lg_list, z_pos, dx, dy, z_list, alpha=0.5, color=colors)
 	# Add a color bar which maps values to colors.
 	# fig.colorbar(s1, shrink=0.5, aspect=5)
 	# ax.plot3D(lat_list, long_list, z_list)
 	plt.show()
 	return fig
-	
+
 # Main Function
 def main():
     # Do stuff in Main
-    # plot_locations(get_location_dict())
-    summed_dict = get_summed_DNI(get_dataframes(get_location_dict()))
-    tl, pl, ll, lol, sl = split_DNI_Dict(summed_dict)
-    fig = threeD_plotter(ll, lol, sl, pl, tl)
+    run_type = input("What would you like to run?('Get Data'/'Plot Data')")
+    print(run_type)
+    if run_type == 'Get Data':
+        # Pull the NREL Data and cache it
+        summed_dict = get_summed_DNI(get_dataframes(get_location_dict()))
+        # cache_dict(summed_dict)
+        cache_dict(summed_dict)
+    elif run_type == 'Plot Data':
+        # Pull the cached data
+        saved_data = uncache_dict()
+        tl, pl, ll, lol, sl = split_DNI_Dict(saved_data)
+        fig = threeD_plotter(ll, lol, sl, pl, tl)
+    else:
+        # Bad input
+        print("Bad Entry")
+
+# plot_locations(get_location_dict())
+# summed_dict = get_summed_DNI(get_dataframes(get_location_dict()))
     print("Fin")
     return None
 
