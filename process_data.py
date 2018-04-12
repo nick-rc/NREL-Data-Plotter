@@ -183,6 +183,19 @@ def split_DNI_Dict(dict):
 
 	# Create a histogram(heatmap) plotter here
 
+# Create Functions to manipulate the DNI Data
+def get_irradience(dni_list):
+	# COnvert DNI to W/m2 irradience
+	avg_dni = sum(dni_list)/float(len(dni_list))
+
+	# Scale the entire list
+	scaled_DNI = [x*24 for x in dni_list]
+	avg_irrad = sum(scaled_DNI)/float(len(scaled_DNI))
+	print("Average irradience value is: ", avg_irrad, "W/m2")
+
+	return scaled_DNI
+
+
 def threeD_plotter(lat_list, long_list, z_list_in):
 	# Create figure to add plots to
 	# Figure size is 18 x 9 inches
@@ -192,7 +205,6 @@ def threeD_plotter(lat_list, long_list, z_list_in):
 	ax1.set_xlabel("Latitude")
 	ax1.set_ylabel("Longitude")
 	ax1.set_zlabel("DNI Values")
-	ax1.get_xaxis().set_visible(False)
 	# Numpy methods
 	# lat_list, long_List = np.meshgrid(lat_list, long_list)
 	print(len(lat_list))
@@ -247,7 +259,9 @@ def main():
         # Pull the cached data
         saved_data = uncache_dict()
         temp_l, precip_l, lat_l, long_l, sum_l = split_DNI_Dict(saved_data)
-        fig = threeD_plotter(lat_l, long_l, sum_l)
+        # Scale DNI list
+        dni_list = get_irradience(sum_l)
+        fig = threeD_plotter(lat_l, long_l, dni_list)
     else:
         # Bad input
         print("Bad Entry")
