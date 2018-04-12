@@ -192,9 +192,39 @@ def get_irradience(dni_list):
 	scaled_DNI = [x*24 for x in dni_list]
 	avg_irrad = sum(scaled_DNI)/float(len(scaled_DNI))
 	print("Average irradience value is: ", avg_irrad, "W/m2")
-
 	return scaled_DNI
 
+# Get power output
+def get_powerout(irrad_list):
+    # Set efficiency
+    efficiency = 10 # %
+    panel_power = [x*efficiency/100 for x in irrad_list]
+    avg_power = sum(panel_power)/float(len(panel_power))
+    print("Average Panel output is: ", avg_power, "W/m2")
+    return panel_power
+
+# Get price per watt lists - for TWS and for buyers
+def get_ModuleCosts(pwr_list):
+    # Set cost to produce m2
+    prod_cost = 23 # $/m2
+    sell_cost = 50 # $/m2
+    prod_ppw = [prod_cost/x for x in pwr_list]
+    avg_prod_ppw = sum(prod_ppw)/float(len(prod_ppw))
+    sell_ppw = [sell_cost/x for x in pwr_list]
+    avg_sell_ppw = sum(sell_ppw)/float(len(sell_ppw))
+    print("Average Prod PPW is: ", avg_prod_ppw, "$/W")
+    print("Average Sell PPW is: ", avg_sell_ppw, "$/W")
+    return prod_ppw, sell_ppw
+
+def get_LCOE(pwr_list, cost_list):
+    # Set the standard values for the solar cell
+    lifetime = 10 # years
+    mwh_per_lifetime = [x*8.765813*10/1000 for x in pwr_list]
+    life_cost = [x*4 for x in cost_list]
+    lcoe_list = [c/p*1000 for c, p in zip(life_cost, mwh_per_lifetime)]
+    avg_lcoe = sum(lcoe_list)/float(len(lcoe_list))
+    print("Average LCOE is: ", avg_lcoe, "$/MWh")
+    return lcoe_list
 
 def threeD_plotter(lat_list, long_list, z_list_in):
 	# Create figure to add plots to
@@ -261,7 +291,10 @@ def main():
         temp_l, precip_l, lat_l, long_l, sum_l = split_DNI_Dict(saved_data)
         # Scale DNI list
         dni_list = get_irradience(sum_l)
-        fig = threeD_plotter(lat_l, long_l, dni_list)
+        pwr_list = get_powerout(dni_list)
+        prod_cost, sell_cost = get_ModuleCosts(pwr_list)
+        lcoe_list = get_LCOE(pwr_list, prod_cost)
+        fig = threeD_plotter(lat_l, long_l, lcoe_list)
     else:
         # Bad input
         print("Bad Entry")
