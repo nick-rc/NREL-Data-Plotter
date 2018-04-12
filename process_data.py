@@ -183,30 +183,32 @@ def split_DNI_Dict(dict):
 
 	# Create a histogram(heatmap) plotter here
 
-def threeD_plotter(lat_list, long_list, z_list1, z_list2, z_list3):
+def threeD_plotter(lat_list, long_list, z_list_in):
 	# Create figure to add plots to
 	# Figure size is 18 x 9 inches
-	fig = plt.figure(figsize=(36,9))
+	fig = plt.figure(figsize=(24,12))
 	# Add the z_list1 subplot
-	ax1  = fig.add_subplot(121, projection='3d')
+	ax1  = fig.add_subplot(111, projection='3d')
 	ax1.set_xlabel("Latitude")
 	ax1.set_ylabel("Longitude")
 	ax1.set_zlabel("DNI Values")
+	ax1.get_xaxis().set_visible(False)
 	# Numpy methods
 	# lat_list, long_List = np.meshgrid(lat_list, long_list)
 	print(len(lat_list))
 	print(len(long_list))
-	print(len(z_list1))
+	print(len(z_list_in))
 	# lat_list, long_list = np.meshgrid(lat_list, long_list, z_list1)
 	# np.array(lat_list)
 	# np.array(long_list)
 	# Create a numpy array of all the lists
 	lt_list = np.array(lat_list)
 	lg_list = np.array(long_list)
-	z_list = np.array(z_list1)
+	z_list = np.array(z_list_in)
 	# Create surface plot
 	# ax.plot_surface(lt_list, lg_list, z_list, , linewidth=1, antialiased=False)
-	ax1.scatter(lt_list, lg_list, z_list, zdir='z', marker=".", c=z_list,  cmap=cm.BrBG, s=50) # 'viridis'
+	sc1 = ax1.scatter(lt_list, lg_list, z_list, zdir='z', marker=".", c=z_list,  cmap=cm.seismic, s=50) # 'viridis'
+	cb = fig.colorbar(sc1)
 	# surface2 = ax.plot_surface(lat_list, long_list, z_list2, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 	# surface2 = ax.plot_surface(lat_list, long_list, z_list3, cmap=cm.coolwarm, linewidth=0, antialiased=False)
 
@@ -215,6 +217,7 @@ def threeD_plotter(lat_list, long_list, z_list1, z_list2, z_list3):
 	# ax.zaxis.set_major_locator(LinearLocator(10))
 	# ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
 	# Second test subplot
+	'''
 	ax2 = fig.add_subplot(122, projection='3d')
 	dx = np.ones(len(lat_list))/2
 	dy = np.ones(len(long_list))/2
@@ -222,7 +225,8 @@ def threeD_plotter(lat_list, long_list, z_list1, z_list2, z_list3):
 	norm = plt.Normalize(z_list.min(), z_list.max())
 	colors = cm.BrBG(norm(z_list))
 
-	ax2.bar3d(lt_list, lg_list, z_pos, dx, dy, z_list, alpha=0.5, color=colors)
+	# ax2.bar3d(lt_list, lg_list, z_pos, dx, dy, z_list, alpha=0.5, color=colors)
+	'''
 	# Add a color bar which maps values to colors.
 	# fig.colorbar(s1, shrink=0.5, aspect=5)
 	# ax.plot3D(lat_list, long_list, z_list)
@@ -242,8 +246,8 @@ def main():
     elif run_type == 'Plot Data':
         # Pull the cached data
         saved_data = uncache_dict()
-        tl, pl, ll, lol, sl = split_DNI_Dict(saved_data)
-        fig = threeD_plotter(ll, lol, sl, pl, tl)
+        temp_l, precip_l, lat_l, long_l, sum_l = split_DNI_Dict(saved_data)
+        fig = threeD_plotter(lat_l, long_l, sum_l)
     else:
         # Bad input
         print("Bad Entry")
