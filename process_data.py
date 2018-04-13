@@ -242,38 +242,33 @@ def get_LCOE(pwr_list, cost_list, lifetime):
     return lcoe_list
 
 def plot_LCOE_vals(efficiencies, lifetimes, sum_l):
-	# Create a figure
-	fig = plt.figure(figsize=(12,6))
-	ax = fig.add_subplot(111)
-	ax.set_xlabel("Lifetime (years)")
-	ax.set_ylabel("LCOE ($/MWh)")
-	lcoe_legend = []
-	# For each efficiency, create a list of LCOE values
-	lcoe_compares = []
-	lcoe_avg_list = []
-	for efficiency in efficiencies:
-		# loop through lifetimes and colculate LCOE
-		for lifetime in lifetimes:
-			irr = get_irradience(sum_l)
-			pwr = get_powerout(irr, efficiency)
-			p_cost, s_cost = get_ModuleCosts(pwr)
-			lcoe_l = get_LCOE(pwr, s_cost, lifetime)
-			# print(get_avg(lcoe_l))
-			lcoe_avg_list.append(get_avg(lcoe_l))
-		# Once the lifetimes list is full, append it to the ocmpare list
-		lcoe_compares.append(lcoe_avg_list)
-		lcoe_legend.append("Efficiency = %d" % efficiency)
-		plt.plot(lifetimes, lcoe_avg_list, marker='.')
-		plt.xlabel('Lifetime (years)')
-		plt.ylabel('LCOE ($USD/MWh)')
-		# plt.set_xticks(lifetimes)
-		# plt.set_yticks(efficiencies)
-		plt.grid(True, alpha=0.5, linestyle='-')
-		lcoe_avg_list = []
-	# Return the list of lists
-	plt.legend(lcoe_legend, loc='upper right')
-	plt.show()
-	return lcoe_compares
+    # Create a figure
+    fig = plt.figure(figsize=(12,6))
+    ax = fig.add_subplot(111)
+    ax.set(title="Levelized Cost of Energy \n Comparison Chart", xlabel="Lifetime (years)", ylabel="LCOE ($/MWh)")
+    lcoe_legend = []
+    # For each efficiency, create a list of LCOE values
+    lcoe_compares = []
+    lcoe_avg_list = []
+    for efficiency in efficiencies:
+        # loop through lifetimes and colculate LCOE
+        for lifetime in lifetimes:
+            irr = get_irradience(sum_l)
+            pwr = get_powerout(irr, efficiency)
+            p_cost, s_cost = get_ModuleCosts(pwr)
+            lcoe_l = get_LCOE(pwr, s_cost, lifetime)
+            # print(get_avg(lcoe_l))
+            lcoe_avg_list.append(get_avg(lcoe_l))
+        # Once the lifetimes list is full, append it to the ocmpare list
+        lcoe_compares.append(lcoe_avg_list)
+        lcoe_legend.append("Efficiency = {:.1f}".format(efficiency))
+        plt.plot(lifetimes, lcoe_avg_list, marker='.')
+        plt.grid(True, alpha=0.5, linestyle='-')
+        lcoe_avg_list = []
+    # Return the list of lists
+    plt.legend(lcoe_legend, loc='upper right')
+    plt.show()
+    return lcoe_compares
 
 def threeD_plotter(lat_list, long_list, z_list_in):
 	# Create figure to add plots to
