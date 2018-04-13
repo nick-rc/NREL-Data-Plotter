@@ -187,20 +187,21 @@ def split_DNI_Dict(dict):
 def get_irradience(dni_list):
 	# COnvert DNI to W/m2 irradience
 	avg_dni = sum(dni_list)/float(len(dni_list))
+	# print("Average DNI value is: ", avg_dni, "W/m2")
 
 	# Scale the entire list
 	scaled_DNI = [x*24 for x in dni_list]
 	avg_irrad = sum(scaled_DNI)/float(len(scaled_DNI))
-	print("Average irradience value is: ", avg_irrad, "W/m2")
+	# print("Average irradience value is: ", avg_irrad, "W/m2")
 	return scaled_DNI
 
 # Get power output
-def get_powerout(irrad_list):
+def get_powerout(irrad_list, efficiency):
     # Set efficiency
-    efficiency = 10 # %
+    # efficiency = 10 # %
     panel_power = [x*efficiency/100 for x in irrad_list]
     avg_power = sum(panel_power)/float(len(panel_power))
-    print("Average Panel output is: ", avg_power, "W/m2")
+    # print("Average Panel output is: ", avg_power, "W/m2")
     return panel_power
 
 # Get price per watt lists - for TWS and for buyers
@@ -212,19 +213,67 @@ def get_ModuleCosts(pwr_list):
     avg_prod_ppw = sum(prod_ppw)/float(len(prod_ppw))
     sell_ppw = [sell_cost/x for x in pwr_list]
     avg_sell_ppw = sum(sell_ppw)/float(len(sell_ppw))
-    print("Average Prod PPW is: ", avg_prod_ppw, "$/W")
-    print("Average Sell PPW is: ", avg_sell_ppw, "$/W")
+    # print("Average Prod PPW is: ", avg_prod_ppw, "$/W")
+    # print("Average Sell PPW is: ", avg_sell_ppw, "$/W")
     return prod_ppw, sell_ppw
 
-def get_LCOE(pwr_list, cost_list):
+def calc_LCOE(cost, n):
+	i     = 0.05 # Discount rate of capital(10%)
+	cf    = 0.2
+	OandM = .001
+	n = float(n)
+	crf   = (i*(i+1)**n)/((i+1)**n - 1)
+	LCOE_val = (cost * 10**6 * crf)/(cf*8760) + OandM
+	return LCOE_val
+
+def get_avg(in_list):
+	# Return the average value.
+	return sum(in_list)/float(len(in_list))
+
+
+def get_LCOE(pwr_list, cost_list, lifetime):
     # Set the standard values for the solar cell
-    lifetime = 10 # years
-    mwh_per_lifetime = [x*8.765813*10/1000 for x in pwr_list]
+    # mwh_per_lifetime = [x*10/1000 for x in pwr_list] # *8.765813
     life_cost = [x*4 for x in cost_list]
-    lcoe_list = [c/p*1000 for c, p in zip(life_cost, mwh_per_lifetime)]
+    lcoe_list = [calc_LCOE(x, lifetime) for x in life_cost]
+    # print(lcoe_list)  # [c/p for c, p in zip(life_cost, mwh_per_lifetime)]
     avg_lcoe = sum(lcoe_list)/float(len(lcoe_list))
-    print("Average LCOE is: ", avg_lcoe, "$/MWh")
+    # print("Average LCOE is: ", avg_lcoe, "$/MWh")
     return lcoe_list
+
+def plot_LCOE_vals(efficiencies, lifetimes, sum_l):
+	# Create a figure
+	fig = plt.figure(figsize=(12,6))
+	ax = fig.add_subplot(111)
+	ax.set_xlabel("Lifetime (years)")
+	ax.set_ylabel("LCOE ($/MWh)")
+	lcoe_legend = []
+	# For each efficiency, create a list of LCOE values
+	lcoe_compares = []
+	lcoe_avg_list = []
+	for efficiency in efficiencies:
+		# loop through lifetimes and colculate LCOE
+		for lifetime in lifetimes:
+			irr = get_irradience(sum_l)
+			pwr = get_powerout(irr, efficiency)
+			p_cost, s_cost = get_ModuleCosts(pwr)
+			lcoe_l = get_LCOE(pwr, s_cost, lifetime)
+			# print(get_avg(lcoe_l))
+			lcoe_avg_list.append(get_avg(lcoe_l))
+		# Once the lifetimes list is full, append it to the ocmpare list
+		lcoe_compares.append(lcoe_avg_list)
+		lcoe_legend.append("Efficiency = %d" % efficiency)
+		plt.plot(lifetimes, lcoe_avg_list, marker='.')
+		plt.xlabel('Lifetime (years)')
+		plt.ylabel('LCOE ($USD/MWh)')
+		# plt.set_xticks(lifetimes)
+		# plt.set_yticks(efficiencies)
+		plt.grid(True, alpha=0.5, linestyle='-')
+		lcoe_avg_list = []
+	# Return the list of lists
+	plt.legend(lcoe_legend, loc='upper right')
+	plt.show()
+	return lcoe_compares
 
 def threeD_plotter(lat_list, long_list, z_list_in):
 	# Create figure to add plots to
@@ -291,10 +340,20 @@ def main():
         temp_l, precip_l, lat_l, long_l, sum_l = split_DNI_Dict(saved_data)
         # Scale DNI list
         dni_list = get_irradience(sum_l)
-        pwr_list = get_powerout(dni_list)
+        pwr_list = get_powerout(dni_list, 10)
         prod_cost, sell_cost = get_ModuleCosts(pwr_list)
-        lcoe_list = get_LCOE(pwr_list, prod_cost)
+        lcoe_list = get_LCOE(pwr_list, sell_cost, 10)
         fig = threeD_plotter(lat_l, long_l, lcoe_list)
+    elif run_type == 'LCOE Data':
+        saved_data = uncache_dict()
+        temp_l, precip_l, lat_l, long_l, sum_l = split_DNI_Dict(saved_data)
+        # Create Efficiency Range
+        effs = [x/2 for x in range(20, 45, 5)]
+        print(effs)
+        # Create Lifetimes range
+        lifes = range(5, 36, 1)
+        # Plot the LCOE List
+        lcoe_comp = plot_LCOE_vals(effs, lifes, sum_l)
     else:
         # Bad input
         print("Bad Entry")
