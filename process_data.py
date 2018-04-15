@@ -14,6 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import json
 
 import glob # For directory and pathname processing
@@ -192,7 +193,7 @@ def get_irradience(dni_list):
 	# Scale the entire list
 	scaled_DNI = [x*24 for x in dni_list]
 	avg_irrad = sum(scaled_DNI)/float(len(scaled_DNI))
-	# print("Average irradience value is: ", avg_irrad, "W/m2")
+	print("Average irradience value is: ", avg_irrad, "W/m2")
 	return scaled_DNI
 
 # Get power output
@@ -201,7 +202,7 @@ def get_powerout(irrad_list, efficiency):
     # efficiency = 10 # %
     panel_power = [x*efficiency/100 for x in irrad_list]
     avg_power = sum(panel_power)/float(len(panel_power))
-    # print("Average Panel output is: ", avg_power, "W/m2")
+    print("Average Panel output is: ", avg_power, "W/m2")
     return panel_power
 
 # Get price per watt lists - for TWS and for buyers
@@ -213,8 +214,8 @@ def get_ModuleCosts(pwr_list):
     avg_prod_ppw = sum(prod_ppw)/float(len(prod_ppw))
     sell_ppw = [sell_cost/x for x in pwr_list]
     avg_sell_ppw = sum(sell_ppw)/float(len(sell_ppw))
-    # print("Average Prod PPW is: ", avg_prod_ppw, "$/W")
-    # print("Average Sell PPW is: ", avg_sell_ppw, "$/W")
+    print("Average Prod PPW is: ", avg_prod_ppw, "$/W")
+    print("Average Sell PPW is: ", avg_sell_ppw, "$/W")
     return prod_ppw, sell_ppw
 
 def calc_LCOE(cost, n):
@@ -245,8 +246,11 @@ def plot_LCOE_vals(efficiencies, lifetimes, sum_l):
     # Create a figure
     fig = plt.figure(figsize=(12,6))
     ax = fig.add_subplot(111)
-    ax.set(title="Levelized Cost of Energy \n Comparison Chart", xlabel="Lifetime (years)", ylabel="LCOE ($/MWh)")
+    ax.set_title("Levelized Cost of Energy \n Comparison Chart", color='white', fontsize=18)
+    ax.set_xlabel("Lifetime (years)", color='white', fontsize=18)
+    ax.set_ylabel("LCOE ($/MWh)", color='white', fontsize=18)
     lcoe_legend = []
+    ax.tick_params('both', color='white', labelcolor='white',labelsize=16, size=5)
     # For each efficiency, create a list of LCOE values
     lcoe_compares = []
     lcoe_avg_list = []
@@ -262,15 +266,16 @@ def plot_LCOE_vals(efficiencies, lifetimes, sum_l):
         # Once the lifetimes list is full, append it to the ocmpare list
         lcoe_compares.append(lcoe_avg_list)
         lcoe_legend.append("Efficiency = {:.1f}".format(efficiency))
-        plt.plot(lifetimes, lcoe_avg_list, marker='.')
-        plt.grid(True, alpha=0.5, linestyle='-')
+        plt.plot(lifetimes, lcoe_avg_list, marker='.', markersize=10, linewidth=3)
+        plt.grid(True, alpha=0.7, linestyle='-', linewidth=2, color='white')# , color='white')
         lcoe_avg_list = []
     # Return the list of lists
     plt.legend(lcoe_legend, loc='upper right')
     plt.show()
+    fig.savefig('test-2.png', transparent=True)
     return lcoe_compares
 
-def threeD_plotter(lat_list, long_list, z_list_in):
+def threeD_plotter(lat_list, long_list, z_list_in, z_label):
 	# Create figure to add plots to
 	# Figure size is 18 x 9 inches
 	fig = plt.figure(figsize=(24,12))
@@ -278,7 +283,11 @@ def threeD_plotter(lat_list, long_list, z_list_in):
 	ax1  = fig.add_subplot(111, projection='3d')
 	ax1.set_xlabel("Latitude")
 	ax1.set_ylabel("Longitude")
-	ax1.set_zlabel("DNI Values")
+	ax1.set_zlabel(z_label)
+	ax1.xaxis._axinfo['label']['space_factor'] = 10
+	ax1.yaxis._axinfo['label']['space_factor'] = 10
+	ax1.zaxis._axinfo['label']['space_factor'] = 10
+	ax1.set_title("Levelized Cost of Energy \n Data for the United States")
 	# Numpy methods
 	# lat_list, long_List = np.meshgrid(lat_list, long_list)
 	print(len(lat_list))
@@ -293,29 +302,18 @@ def threeD_plotter(lat_list, long_list, z_list_in):
 	z_list = np.array(z_list_in)
 	# Create surface plot
 	# ax.plot_surface(lt_list, lg_list, z_list, , linewidth=1, antialiased=False)
-	sc1 = ax1.scatter(lt_list, lg_list, z_list, zdir='z', marker=".", c=z_list,  cmap=cm.seismic, s=50) # 'viridis'
-	cb = fig.colorbar(sc1)
-	# surface2 = ax.plot_surface(lat_list, long_list, z_list2, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-	# surface2 = ax.plot_surface(lat_list, long_list, z_list3, cmap=cm.coolwarm, linewidth=0, antialiased=False)
-
-	# Customize the z axis.
-	# ax.set_zlim(0, 50.01)
-	# ax.zaxis.set_major_locator(LinearLocator(10))
-	# ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-	# Second test subplot
-	'''
-	ax2 = fig.add_subplot(122, projection='3d')
-	dx = np.ones(len(lat_list))/2
-	dy = np.ones(len(long_list))/2
-	z_pos = np.zeros(len(z_list))
-	norm = plt.Normalize(z_list.min(), z_list.max())
-	colors = cm.BrBG(norm(z_list))
-
-	# ax2.bar3d(lt_list, lg_list, z_pos, dx, dy, z_list, alpha=0.5, color=colors)
-	'''
+	sc1 = ax1.scatter(lt_list, lg_list, z_list, zdir='z', marker=".", c=z_list,  cmap=cm.YlGn_r, s=50) # 'viridis'
+	ax1.view_init(elev=75, azim=-80)
+	# create an axes on the right side of ax. The width of cax will be 5%
+	# of ax and the padding between cax and ax will be fixed at 0.05 inch.
+	# divider = make_axes_locatable(ax1)
+	# cax = divider.append_axes('top', size="5%", pad=0.05)
+	cb = fig.colorbar(sc1, ax=ax1)
+	cb.set_label('$USD/MWh')
 	# Add a color bar which maps values to colors.
 	# fig.colorbar(s1, shrink=0.5, aspect=5)
 	# ax.plot3D(lat_list, long_list, z_list)
+	fig.savefig('3D-Plot.png')
 	plt.show()
 	return fig
 
@@ -338,7 +336,7 @@ def main():
         pwr_list = get_powerout(dni_list, 10)
         prod_cost, sell_cost = get_ModuleCosts(pwr_list)
         lcoe_list = get_LCOE(pwr_list, sell_cost, 10)
-        fig = threeD_plotter(lat_l, long_l, lcoe_list)
+        fig = threeD_plotter(lat_l, long_l, lcoe_list, 'LCOE ($USD/MWh)')
     elif run_type == 'LCOE Data':
         saved_data = uncache_dict()
         temp_l, precip_l, lat_l, long_l, sum_l = split_DNI_Dict(saved_data)
